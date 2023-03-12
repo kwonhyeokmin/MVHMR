@@ -1,0 +1,11 @@
+pycocotools
+opencv-python
+matplotlib
+chumpy
+trimesh
+tqdm
+yacs
+torchgeometry
+pyrender
+smplx
+pyopengl==3.1.4
