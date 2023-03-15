@@ -1,7 +1,3 @@
-#  Copyright (c) 2022. Kwon. Sweetk LAB., All rights reserved.
-#  Kwon Hyeokmin <hykwon8952@gmail.com>
-#  Sweetk Ltd. <sweetk_lab@sweetk.co.kr>
-
 import os
 # local
 try:

@@ -1,26 +1,11 @@
-# 2022.07.19 - Changed for CLIFF
-#              Huawei Technologies Co., Ltd.
-
-# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
-# Copyright (c) 2019, University of Pennsylvania, Max Planck Institute for Intelligent Systems
-
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
-
-# This script is borrowed and extended from SPIN
-
 import torch
 import torch.nn as nn
 import numpy as np
 import math
 
-from common.utils.imutils import rot6d_to_rotmat
 from models.backbones.resnet import ResNet
 from common.utils.imutils import rot6d_to_rotmat, rotmat_to_rot6d
+
 
 class CLIFF_V2(nn.Module):
     """ SMPL Iterative Regressor with ResNet50 backbone"""

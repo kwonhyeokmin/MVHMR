@@ -1,10 +1,6 @@
-#  Copyright (c) 2022. Kwon., All rights reserved.
-#  Kwon Hyeokmin <hykwon8952@gmail.com>
-
-import numpy as np
 import torch
 
-# def cam_crop2full(crop_cam, center, scale, full_img_shape, focal_length):
+
 def cam_crop2full(crop_cam, center, scale, princpt, focal_length):
     """ Convert the camera parameters from the crop camera to the full camera
 

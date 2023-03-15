@@ -9,8 +9,8 @@ This repo is for the paper:
 
 ## Prepare
 
-You have to download pretrained-model files from CLIFF repository.(https://github.com/huawei-noah/noah-research/tree/master/CLIFF)
-And, you need to download SMPL models from official site too.
+You have to download pretrained-model files from CLIFF repository(https://github.com/huawei-noah/noah-research/tree/master/CLIFF). After download, move files to CLIFF/data/ckpt directory. <br/>
+And, you need to download SMPL models(SMPL_NEUTRAL.pkl) from official site too. Like above, move files to data/smpl.
 
 **[Libraries that have to install before running]**
 * ffmpeg 
@@ -42,6 +42,8 @@ ${ROOT}
 |   |-- model_dump
 |   |-- result
 |   |-- vis
+|-- tools
+|   |-- extract_joint_regressor.py
 |-- eval.py
 |-- eval_with_gt2d.py
 ```
@@ -49,7 +51,8 @@ ${ROOT}
 * `CLIFF` contains CLIFF models for applying our method.
 * `common` contains utils code.
 * `dataset` contains data loading code.
-* `output` contains model pt files, result, and vis. Model files are pretrained CLIFF model download from CLIFF repo
+* `output` for saving result, and vis files.
+* `tools` contains extra code etc supporting
 
 # Run evaluation code (Fitting process contained)
 
@@ -58,22 +61,22 @@ There are two types that one is for running models without extra datas, second i
 1. running models without extra datas
     ```shell
    # hrnet for original CLIFF (+h36m-p1)
-    eval.py --checkpoint output/model_dump/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version default --backbone hr48 --save-results True --datasets h36m-p1
+    python3 eval.py --checkpoint CLIFF/data/ckpt/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version default --backbone hr48 --save-results True --datasets h36m-p1
     # hrnet for MVHMR (+h36m-p1)
-    eval.py --checkpoint output/model_dump/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version mvhmr --backbone hr48 --save-results True --datasets h36m-p1
+    python3 eval.py --checkpoint CLIFF/data/ckpt/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version mvhmr --backbone hr48 --save-results True --datasets h36m-p1
     ```
-   
+
 2. running with 2D GT keypoints (Fitting)
     ```shell
     # hrnet for original CLIFF (+h36m-p1)
-    eval_with_gt2d.py --checkpoint output/model_dump/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version default --backbone hr48 --save-results True --datasets h36m-p1
+    python3 eval_with_gt2d.py --checkpoint CLIFF/data/ckpt/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version default --backbone hr48 --save-results True --datasets h36m-p1
     # hrnet for MVHMR (+h36m-p1)
-    eval_with_gt2d.py --checkpoint output/model_dump/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version mvhmr --backbone hr48 --save-results True --datasets h36m-p1
+    python3 eval_with_gt2d.py --checkpoint CLIFF/data/ckpt/hr48-PA43.0_MJE69.0_MVE81.2_3dpw.pt --version mvhmr --backbone hr48 --save-results True --datasets h36m-p1
     ```
 
 ## Citing
 ```
-@InProceedings{Moon_2022_CVPRW_Hand4Whole,  
+@InProceedings{,  
 author = {Kwon, Hyeok-Min and Lee, Jun-Ho and Kim, Hwa-Jong},  
 title = {},  
 booktitle = {},  

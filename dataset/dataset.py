@@ -6,7 +6,7 @@ from torch.utils.data.dataset import Dataset
 from common.utils import imutils
 
 
-class MocapDataset(Dataset):
+class MultiviewMocapDataset(Dataset):
     def __init__(self, db, is_train):
         self.db = db.data
         self.grouping = db.grouping

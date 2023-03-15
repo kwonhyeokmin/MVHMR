@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-from config import cfg
-import copy
 import constants
 
 

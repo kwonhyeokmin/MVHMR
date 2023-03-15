@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
 
-from dataset.dataset import MocapDataset
+from dataset.dataset import MultiviewMocapDataset
 from dataset.multiview_h36m import MultiViewH36M
 from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd
 from common.utils.pose_utils import cam2world, cam2pixel, reconstruction_error
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     if 'h36m' in dataset_name:
         protocol = int(dataset_name.replace('h36m-p', ''))
         dataset = MultiViewH36M('test', protocol=protocol)
-        dataset_loader = MocapDataset(dataset, True)
+        dataset_loader = MultiviewMocapDataset(dataset, True)
         data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
     else:
         AssertionError(f'{args.datasets} is not supported yet.')
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # joint_mapper_h36m = constants.H36M_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.H36M_TO_J14
     joint_mapper_h36m = constants.H36M_TO_J14
     joint_mapper_smpl = constants.J24_TO_J14
-    # # joint_mapper_gt = constants.J24_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.J24_TO_J14
+    # joint_mapper_gt = constants.J24_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.J24_TO_J14
     # joint_mapper_gt = constants.J24_TO_J14
     vis = True
 
@@ -178,7 +178,6 @@ if __name__ == '__main__':
                                                      viewport_width=img_w[B],
                                                      viewport_height=img_h[B],
                                                      faces=smpl.faces)
-                # cv2.imwrite(os.path.join(cfg.vis_dir, f'mesh_target_{int(data_id[B])}_{B}_img.jpg'), mesh_vis_img)
 
                 other_extrinsic = torch.eye(4, 4, device=device)
                 other_extrinsic[:3, :3] = other_R
@@ -192,7 +191,6 @@ if __name__ == '__main__':
                                                            viewport_width=other_img_w[B],
                                                            viewport_height=other_img_h[B],
                                                            faces=smpl.faces)
-                # cv2.imwrite(os.path.join(cfg.vis_dir, f'mesh_other_{int(data_id[B])}_{B}_img.jpg'), mesh_other_vis_img)
                 mesh_vis = np.hstack((mesh_vis_img, cv2.resize(mesh_other_vis_img, (target_img.shape[1], target_img.shape[0]))))
 
                 pred_points_2d = cam2pixel(pred_keypoints_3d[B].detach().cpu(),
@@ -202,9 +200,7 @@ if __name__ == '__main__':
                                          (focal_length.detach().cpu()[B], focal_length.detach().cpu()[B]),
                                          other_princpt.detach().cpu()[B])
                 pred_joint_vis_img = visutils.vis_keypoints(target_img, pred_points_2d.transpose(), dataset.lines)
-                # cv2.imwrite(os.path.join(cfg.vis_dir, f'pred_joint_pred_{int(data_id[B])}_{B}_img.jpg'), pred_joint_vis_img)
                 gt_joint_vis_img = visutils.vis_keypoints(target_img, gt_points_2d.transpose(), dataset.lines)
-                # cv2.imwrite(os.path.join(cfg.vis_dir, f'gt_joint_pred_{int(data_id[B])}_{B}_img.jpg'), gt_joint_vis_img)
                 kp_vis = np.hstack((gt_joint_vis_img, cv2.resize(pred_joint_vis_img, (target_img.shape[1], target_img.shape[0]))))
 
                 cv2.imwrite(os.path.join(cfg.vis_dir, f'{args.version}_{int(data_id[B])}_{B}_img.jpg'), np.vstack((np.vstack((ori_vis, kp_vis)), mesh_vis)))

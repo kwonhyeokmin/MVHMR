@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
 
-from dataset.dataset import MocapDataset
+from dataset.dataset import MultiviewMocapDataset
 from dataset.multiview_h36m import MultiViewH36M
 
 from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     if 'h36m' in dataset_name:
         protocol = int(dataset_name.replace('h36m-p', ''))
         dataset = MultiViewH36M('test', protocol=protocol)
-        dataset_loader = MocapDataset(dataset, True)
+        dataset_loader = MultiviewMocapDataset(dataset, True)
         data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
     else:
         AssertionError(f'{args.datasets} is not supported yet.')

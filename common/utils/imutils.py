@@ -1,8 +1,5 @@
-#  Copyright (c) 2022. Kwon., All rights reserved.
-#  Kwon Hyeokmin <hykwon8952@gmail.com>
-#
-#  This scripts are largely referred of CLIFF repository
-#  (https://github.com/huawei-noah/noah-research/tree/master/CLIFF)
+# This script is borrowed and extended from CLIFF
+# (https://github.com/huawei-noah/noah-research/tree/master/CLIFF)
 
 import torch
 from torch.nn import functional as F
