@@ -5,7 +5,7 @@ Things you need to change: *_ROOT that indicate the path to each dataset
 """
 import os
 import os.path as osp
-
+import argparse
 
 class Config:
     ## directory
@@ -35,6 +35,16 @@ class Config:
 
 
 cfg = Config()
+
+def make_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--checkpoint', required=True, help='Path to pretrained checkpoint')
+    parser.add_argument('--version', help='Model name to eval', default='default', choices=['default', 'mvhmr'])
+    parser.add_argument('--backbone', help='Backbone network of model', default='hr48', choices=['hr48', 'res50'])
+    parser.add_argument('--datasets', help='Datasets for evaluation', default='h36m-p1', choices=['h36m-p1', 'h36m-p2', 'nia2023-p1', 'nia2023-p2'])
+    parser.add_argument('--save-results', help='Save SMPL parameter that result of models', default=False)
+    args = parser.parse_args()
+    return args
 
 from common.utils.dir_utils import add_pypath, make_folder
 
