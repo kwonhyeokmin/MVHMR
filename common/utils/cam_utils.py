@@ -18,7 +18,7 @@ def cam_crop2full(crop_cam, center, scale, princpt, focal_length):
     # img_h, img_w = full_img_shape[:, 0], full_img_shape[:, 1]
     cx, cy, b = center[:, 0], center[:, 1], scale * 200
     # w_2, h_2 = img_w / 2., img_h / 2.
-    w_2, h_2 = princpt[:, 1], princpt[:, 0]
+    w_2, h_2 = princpt[:, 0], princpt[:, 1]
 
     bs = b * crop_cam[:, 0] + 1e-9
     tz = 2 * focal_length / bs
