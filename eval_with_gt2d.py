@@ -10,11 +10,11 @@ import torch.backends.cudnn as cudnn
 
 from dataset.dataset import MultiviewMocapDataset
 from dataset.multiview_h36m import MultiViewH36M
-
-from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd
+from dataset.nia2023 import MultiViewNIA2023
+from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd, imutils
 from common.utils.pose_utils import world2cam, cam2world, cam2pixel, reconstruction_error
 from common.utils import conversions
-from config import cfg
+from config import cfg, make_args
 import constants
 from models.smpl import SMPL
 from CLIFF.models.loss import Coord2DLoss
@@ -36,13 +36,7 @@ def exempler_training_mode(model):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', required=True, help='Path to pretrained checkpoint')
-    parser.add_argument('--version', help='Model name to eval', default='default', choices=['default', 'mvhmr'])
-    parser.add_argument('--backbone', help='Backbone network of model', default='hr48', choices=['hr48', 'res50'])
-    parser.add_argument('--datasets', help='Datasets for evaluation', default='h36m-p1', choices=['h36m-p1', 'h36m-p2'])
-    parser.add_argument('--save-results', help='Save SMPL parameter that result of models', default=False)
-    args = parser.parse_args()
+    args = make_args()
 
     cudnn.benchmark = True
     backbone = args.backbone
@@ -82,13 +76,17 @@ if __name__ == '__main__':
     if 'h36m' in dataset_name:
         protocol = int(dataset_name.replace('h36m-p', ''))
         dataset = MultiViewH36M('test', protocol=protocol)
-        dataset_loader = MultiviewMocapDataset(dataset, True)
-        data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
+    elif 'nia2023' in dataset_name:
+        protocol = int(dataset_name.replace('nia2023-p', ''))
+        dataset = MultiViewNIA2023('test', protocol=protocol)
     else:
         AssertionError(f'{args.datasets} is not supported yet.')
+    dataset_loader = MultiviewMocapDataset(dataset, True)
+    data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
 
     # Regressor for Human3.6m
-    J_regressor = torch.from_numpy(np.load(constants.JOINT_REGRESSOR_H36M)).type(torch.FloatTensor).to(device)
+    np_J_regressor = np.load(constants.JOINT_REGRESSOR_H36M) if 'h36m' in dataset_name else np.load(constants.JOINT_REGRESSOR_MLKIT)
+    J_regressor = torch.from_numpy(np_J_regressor).type(torch.FloatTensor).to(device)
 
     # MPJPE and PA-MPJPE
     mpjpe = np.zeros(len(dataset_loader))
@@ -101,8 +99,8 @@ if __name__ == '__main__':
     smpl_camera = np.zeros((len(dataset_loader), 3))
     pred_joints = np.zeros((len(dataset_loader), 17, 3))
 
-    joint_mapper_h36m = constants.H36M_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.H36M_TO_J14
-    joint_mapper_smpl = constants.J24_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.J24_TO_J14
+    joint_mapper_h36m = constants.H36M_TO_J14 if dataset_name in 'h36m' else [x for x in range(1, dataset.joint_num)]
+    joint_mapper_smpl = constants.J24_TO_J14 if dataset_name in 'h36m' else [x for x in range(1, dataset.joint_num)]
     vis = True
 
     for step, data in enumerate(tqdm(data_generator, desc='Eval', total=len(data_generator))):
@@ -294,7 +292,7 @@ if __name__ == '__main__':
             scheduler.step()
 
         # Visualization
-        if vis and (step + 1) % 100 == 0:
+        if vis and (step + 1) % 100 == 1:
             for B in range(curr_batch_size):
                 cam_pred_vertices = torch.from_numpy(
                     cam2world(pred_vertices[B].detach().cpu().numpy(),
@@ -302,8 +300,8 @@ if __name__ == '__main__':
                               t[B].detach().cpu().numpy()
                               )).float().to(device)
 
-                target_img = cv2.imread(dataset.get_ann(data_id[B])['img_path'], cv2.IMREAD_COLOR)
-                other_img = cv2.imread(dataset.get_ann(other_id[B])['img_path'], cv2.IMREAD_COLOR)
+                target_img = imutils.load_img(dataset.get_ann(data_id[B])['img_path'])
+                other_img = imutils.load_img(dataset.get_ann(other_id[B])['img_path'])
                 ori_vis = np.hstack((target_img, cv2.resize(other_img, (target_img.shape[1], target_img.shape[0]))))
 
                 # Visualization of mesh
@@ -344,8 +342,7 @@ if __name__ == '__main__':
                 gt_joint_vis_img = visutils.vis_keypoints(target_img, gt_points_2d.transpose(), dataset.lines)
                 kp_vis = np.hstack((gt_joint_vis_img, cv2.resize(pred_joint_vis_img, (target_img.shape[1], target_img.shape[0]))))
 
-                cv2.imwrite(os.path.join(cfg.vis_dir, f'{int(data_id[B])}_{B}_img.jpg'), np.vstack((np.vstack((ori_vis, kp_vis)), mesh_vis)))
-
+                cv2.imwrite(os.path.join(cfg.vis_dir, f'{args.version}_{int(data_id[B])}_{B}_img.jpg'), np.vstack((np.vstack((ori_vis, kp_vis)), mesh_vis)))
                 # root_vis
                 root_target_vis = visutils.vis_keypoints(target_img, pred_root_2d[B].detach().cpu().numpy().transpose(), dataset.lines)
                 root_vis = visutils.vis_keypoints(other_img, pred_other_root_2d[B].detach().cpu().numpy().transpose(), dataset.lines)

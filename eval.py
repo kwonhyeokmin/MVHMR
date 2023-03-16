@@ -1,5 +1,4 @@
 import os
-import argparse
 from tqdm import tqdm
 
 import numpy as np
@@ -10,21 +9,17 @@ import torch.backends.cudnn as cudnn
 
 from dataset.dataset import MultiviewMocapDataset
 from dataset.multiview_h36m import MultiViewH36M
-from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd
+from dataset.nia2023 import MultiViewNIA2023
+from common.utils import dir_utils, cam_utils, visutils, renderer_pyrd, imutils
 from common.utils.pose_utils import cam2world, cam2pixel, reconstruction_error
-from config import cfg
+from common.utils import conversions
+from config import cfg, make_args
 import constants
 from models.smpl import SMPL
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', required=True, help='Path to pretrained checkpoint')
-    parser.add_argument('--version', help='Model name to eval', default='default', choices=['default', 'mvhmr'])
-    parser.add_argument('--backbone', help='Backbone network of model', default='hr48', choices=['hr48', 'res50'])
-    parser.add_argument('--datasets', help='Datasets for evaluation', default='h36m-p1', choices=['h36m-p1', 'h36m-p2'])
-    parser.add_argument('--save-results', help='Save SMPL parameter that result of models', default=False)
-    args = parser.parse_args()
+    args = make_args()
 
     cudnn.benchmark = True
     backbone = args.backbone
@@ -60,13 +55,17 @@ if __name__ == '__main__':
     if 'h36m' in dataset_name:
         protocol = int(dataset_name.replace('h36m-p', ''))
         dataset = MultiViewH36M('test', protocol=protocol)
-        dataset_loader = MultiviewMocapDataset(dataset, True)
-        data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
+    elif 'nia2023' in dataset_name:
+        protocol = int(dataset_name.replace('nia2023-p', ''))
+        dataset = MultiViewNIA2023('test', protocol=protocol)
     else:
         AssertionError(f'{args.datasets} is not supported yet.')
+    dataset_loader = MultiviewMocapDataset(dataset, True)
+    data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
 
     # Regressor for Human3.6m
-    J_regressor = torch.from_numpy(np.load(constants.JOINT_REGRESSOR_H36M)).type(torch.FloatTensor).to(device)
+    np_J_regressor = np.load(constants.JOINT_REGRESSOR_H36M) if 'h36m' in dataset_name else np.load(constants.JOINT_REGRESSOR_MLKIT)
+    J_regressor = torch.from_numpy(np_J_regressor).type(torch.FloatTensor).to(device)
 
     # Pose metrics
     # MPJPE and PA-MPJPE
@@ -80,8 +79,8 @@ if __name__ == '__main__':
     pred_joints = np.zeros((len(dataset_loader), 17, 3))
 
     # joint_mapper_h36m = constants.H36M_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.H36M_TO_J14
-    joint_mapper_h36m = constants.H36M_TO_J14
-    joint_mapper_smpl = constants.J24_TO_J14
+    joint_mapper_h36m = constants.H36M_TO_J14 if dataset_name in 'h36m' else [x for x in range(1, dataset.joint_num)]
+    joint_mapper_smpl = constants.J24_TO_J14 if dataset_name in 'h36m' else [x for x in range(1, dataset.joint_num)]
     # joint_mapper_gt = constants.J24_TO_J17 if dataset_name == 'mpi-inf-3dhp' else constants.J24_TO_J14
     # joint_mapper_gt = constants.J24_TO_J14
     vis = True
@@ -108,8 +107,8 @@ if __name__ == '__main__':
         curr_batch_size = norm_img.shape[0]
 
         cx, cy, b = center[:, 0], center[:, 1], scale * 200
-        # bbox_info = torch.stack([cx - img_w / 2., cy - img_h / 2., b], dim=-1)
-        bbox_info = torch.stack([cx - princpt[:, 1], cy - princpt[:, 0], b], dim=-1)
+        bbox_info = torch.stack([cx - img_w / 2., cy - img_h / 2., b], dim=-1)
+        # bbox_info = torch.stack([cx - princpt[:, 1], cy - princpt[:, 0], b], dim=-1)
         # The constants below are used for normalization, and calculated from H36M data.
         # It should be fine if you use the plain Equation (5) in the paper.
         bbox_info[:, :2] = bbox_info[:, :2] / focal_length.unsqueeze(-1) * 2.8  # [-1, 1]
@@ -122,7 +121,8 @@ if __name__ == '__main__':
         other_focal_length = data['other_focal'].to(device).float()
 
         other_cx, other_cy, other_b = other_center[:, 0], other_center[:, 1], other_scale * 200
-        other_bbox_info = torch.stack([other_cx - other_princpt[:, 1], other_cy - other_princpt[:, 0], other_b], dim=-1)
+        other_bbox_info = torch.stack([other_cx - other_img_w / 2., other_cy - other_img_h / 2., other_b], dim=-1)
+        # other_bbox_info = torch.stack([other_cx - other_princpt[:, 1], other_cy - other_princpt[:, 0], other_b], dim=-1)
 
         other_bbox_info[:, :2] = other_bbox_info[:, :2] / other_focal_length.unsqueeze(-1) * 2.8  # [-1, 1]
         other_bbox_info[:, 2] = (other_bbox_info[:, 2] - 0.24 * other_focal_length) / (0.06 * other_focal_length)  # [-1, 1]
@@ -152,7 +152,7 @@ if __name__ == '__main__':
         gt_keypoints_3d = points_3d.to(device)
 
         if vis and (step + 1) % 100 == 1:
-            for B in range(cfg.batch_size):
+            for B in range(curr_batch_size):
                 R = data['R'].to(device).float()[B]
                 t = data['t'].to(device).float()[B]
 
@@ -161,8 +161,8 @@ if __name__ == '__main__':
 
                 cam_pred_vertices = torch.from_numpy(cam2world(pred_vertices[B].detach().cpu().numpy(), R.detach().cpu().numpy(), t.detach().cpu().numpy())).float().to(device)
 
-                target_img = cv2.imread(dataset.get_ann(data_id[B])['img_path'], cv2.IMREAD_COLOR)
-                other_img = cv2.imread(dataset.get_ann(other_id[B])['img_path'], cv2.IMREAD_COLOR)
+                target_img = imutils.load_img(dataset.get_ann(data_id[B])['img_path'])
+                other_img = imutils.load_img(dataset.get_ann(other_id[B])['img_path'])
                 ori_vis = np.hstack((target_img, cv2.resize(other_img, (target_img.shape[1], target_img.shape[0]))))
 
                 # Visualization of mesh
@@ -222,5 +222,18 @@ if __name__ == '__main__':
         pa_error = reconstruction_error(pred_keypoints_3d.cpu().numpy(), gt_keypoints_3d.cpu().numpy(), reduction=None)
         pa_mpjpe[step * cfg.batch_size:step * cfg.batch_size + curr_batch_size] = pa_error
 
+        if args.save_results:
+            rot_pad = torch.tensor([0,0,1], dtype=torch.float32, device=device).view(1,3,1)
+            rotmat = torch.cat((pred_rotmat.view(-1, 3, 3), rot_pad.expand(curr_batch_size * 24, -1, -1)), dim=-1)
+            pred_pose = conversions.rotation_matrix_to_angle_axis(rotmat).contiguous().view(-1, 72)
+            smpl_pose[step * cfg.batch_size:step * cfg.batch_size + curr_batch_size, :] = pred_pose.detach().cpu().numpy()
+            smpl_betas[step * cfg.batch_size:step * cfg.batch_size + curr_batch_size, :] = pred_betas.detach().cpu().numpy()
+            smpl_camera[step * cfg.batch_size:step * cfg.batch_size + curr_batch_size, :] = pred_cam_full.detach().cpu().numpy()
+
+    if args.save_results:
+        np.savez(os.path.join(cfg.result_dir, f'smpl_{backbone}-version_{args.version}_protocol_{dataset.protocol}'),
+                 pred_joints=pred_joints, pose=smpl_pose, betas=smpl_betas, camera=smpl_camera)
+        np.savez(os.path.join(cfg.result_dir, f'result_{backbone}-version_{args.version}_protocol_{dataset.protocol}'),
+                 mpjpe=mpjpe, pa_mpjpe=pa_mpjpe)
     print('MPJPE: ' + str(1000 * mpjpe.mean()))
     print('PA-MPJPE: ' + str(1000 * pa_mpjpe.mean()))
