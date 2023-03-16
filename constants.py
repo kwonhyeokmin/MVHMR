@@ -5,6 +5,9 @@ CROP_IMG_HEIGHT = 256
 CROP_IMG_WIDTH = 192
 
 H36M_ROOT = 'D:\Datasets\Human36M'
+NIA2023_1_ROOT = 'D:/Datasets/NIA2023/122-1.다중객체3차원표현데이터(실내)/06.품질검증/1.Dataset'
+NIA2023_2_ROOT = 'D:/Datasets/NIA2023/122-2.다중객체3차원표현데이터(실외)/06.품질검증/1.Dataset'
+
 LSP_ROOT = ''
 LSP_ORIGINAL_ROOT = ''
 LSPET_ROOT = ''
@@ -18,6 +21,8 @@ DATASET_FOLDERS = {
     'h36m': H36M_ROOT,
     'h36m-p1': H36M_ROOT,
     'h36m-p2': H36M_ROOT,
+    'nia2023-p1': NIA2023_1_ROOT,
+    'nia2023-p2': NIA2023_2_ROOT,
     'lsp-orig': LSP_ORIGINAL_ROOT,
     'lsp': LSP_ROOT,
     'lspet': LSPET_ROOT,
@@ -111,9 +116,10 @@ JOINT_MAP = {
     'Head (H36M)': 53, 'Nose': 24, 'Left Eye': 26,
     'Right Eye': 25, 'Left Ear': 28, 'Right Ear': 27
 }
-
+JOINT_REGRESSOR_ORI = 'data/J_regressor_ori.npy'
 JOINT_REGRESSOR_TRAIN_EXTRA = 'data/J_regressor_extra.npy'
 JOINT_REGRESSOR_H36M = 'data/J_regressor_h36m.npy'
+JOINT_REGRESSOR_MLKIT = 'data/J_regressor_mlkit.npy'
 SMPL_MEAN_PARAMS = 'data/smpl_mean_params.npz'
 SMPL_MODEL_DIR = 'data/smpl'
 
