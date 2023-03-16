@@ -11,8 +11,8 @@ import constants
 class MultiViewH36M:
     def __init__(self, data_split, protocol=1):
         self.data_split = data_split
-        self.img_dir = osp.join(constants.DATASET_FOLDERS['h36m'], 'images')
-        self.annot_path = osp.join(constants.DATASET_FOLDERS['h36m'], 'annotations')
+        self.img_dir = osp.join(constants.DATASET_FOLDERS[f'h36m-f{protocol}'], 'images')
+        self.annot_path = osp.join(constants.DATASET_FOLDERS[f'h36m-f{protocol}'], 'annotations')
         self.human_bbox_dir = osp.join(constants.DATASET_FOLDERS['h36m'], 'bbox', 'bbox_human36m_output.json')
         self.joint_num = 17
         self.joints_name = (
