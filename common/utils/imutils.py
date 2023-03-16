@@ -21,6 +21,21 @@ def xyxy2xywh(xyxy):
     return [x1, y1, x2-x1, y2-y1]
 
 
+def load_img(img_path):
+    img_bgr = cv2.imread(img_path, cv2.IMREAD_COLOR)
+    if img_bgr is None:
+        with open(img_path.encode('utf-8'), 'rb') as f:
+            bytes = bytearray(f.read())
+            nparr = np.asarray(bytes, dtype=np.uint8)
+            img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    else:
+        return img_bgr
+    if img_bgr is None:
+        raise FileNotFoundError(f"{img_path} is not found.")
+    else:
+        return img_bgr
+
+
 def get_transform(center, scale, res, rot=0):
     """Generate transformation matrix."""
     # res: (height, width), (rows, cols)
@@ -110,7 +125,7 @@ def bbox_from_detector(bbox, rescale=1.1):
     bbox_size = max(bbox_w * cfg.CROP_ASPECT_RATIO, bbox_h)
     scale = bbox_size / 200.0
     # adjust bounding box tightness
-    scale *= (rescale / 1.2)
+    scale *= rescale
     return center, scale
 
 
