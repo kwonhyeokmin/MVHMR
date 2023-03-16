@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import copy
 from torch.utils.data.dataset import Dataset
-
+import random
 from common.utils import imutils
 
 
@@ -21,7 +21,7 @@ class MultiviewMocapDataset(Dataset):
             self.do_augment = False
 
     def load_rgb_img(self, path):
-        img_bgr = cv2.imread(path, cv2.IMREAD_COLOR)
+        img_bgr = imutils.load_img(path)
         if not isinstance(img_bgr, np.ndarray):
             raise IOError("Fail to read %s" % path)
         img_rgb = img_bgr[:, :, ::-1]
@@ -55,7 +55,7 @@ class MultiviewMocapDataset(Dataset):
         group = copy.deepcopy(self.grouping[key_str])
         group.pop(cam_idx-1)
         # other_index = random.choice(group)
-        other_index = group[2]
+        other_index = group[0]
         other_data = copy.deepcopy(self.db[other_index])
 
         # Load other image
