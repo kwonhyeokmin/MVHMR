@@ -82,6 +82,7 @@ if __name__ == '__main__':
     else:
         AssertionError(f'{args.datasets} is not supported yet.')
     dataset_loader = MultiviewMocapDataset(dataset, True)
+    print(f'The Number of Datasets: {len(dataset_loader)}')
     data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
 
     # Regressor for Human3.6m
@@ -111,6 +112,8 @@ if __name__ == '__main__':
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[cfg.lr_dec_epoch], gamma=cfg.lr_dec_factor)
         loss = {}
         loss_func = Coord2DLoss()
+        key_str = data['key_str']
+
 
         data_id = data['id']
         other_id = data['other_id']

@@ -5,6 +5,8 @@ import json
 from common.utils import imutils
 import constants
 from glob import glob
+import random
+random.seed(2023)
 
 
 class MultiViewNIA2023:
@@ -35,14 +37,14 @@ class MultiViewNIA2023:
 
     def get_subsampling_ratio(self):
         if self.data_split == 'train':
-            return 5
+            return 0.9
         elif self.data_split == 'test':
-            return 64
+            return 0.1
         else:
             assert 0, print('Unknown subset')
 
     def get_key_str(self, datum):
-        return f"{datum['image']['id'].replace('.JPG', '').replace('_' + datum['camera']['position'], '')}"
+        return f"{osp.basename(datum['image']['path']).replace('.JPG', '').replace('_' + datum['camera']['position'], '')}"
 
     def get_ann(self, idx):
         ann = self.data[idx]
@@ -54,13 +56,28 @@ class MultiViewNIA2023:
         data = []
         grouping = {}
         data_id = 0
-        anno_file_lists = [x for x in glob(self.annot_path + f'/**/*.json', recursive=True)]
+        json_file_lists = [x for x in glob(self.annot_path + f'/**/*.json', recursive=True)]
+        anno_file_lists = []
+        # skip if actor's height is lower than 150cm
+        for file in json_file_lists:
+            with open(file, 'r', encoding='utf-8') as fp:
+                ann = json.load(fp)
+            if ann['info']['actor']['height'] < 150.:
+                continue
+            anno_file_lists.append(file)
+        if len(anno_file_lists) < 1:
+            return data, grouping
+
+        # split dataset
+        ratio = self.get_subsampling_ratio()
+        if self.data_split == 'train':
+            anno_file_lists = anno_file_lists[:int((len(anno_file_lists) + 1) * ratio)]
+        else:
+            anno_file_lists = anno_file_lists[-int((len(anno_file_lists) + 1) * ratio):]
+
         for file in anno_file_lists:
             with open(file, 'r', encoding='utf-8') as fp:
                 ann = json.load(fp)
-            # skip if actor's height is lower than 150cm
-            if ann['info']['actor']['height'] < 150.:
-                continue
             img_id = ann['info']['image']['id']
             img_path = ann['info']['image']['path']
             cam_idx = ['C', 'L', 'R'].index(ann['info']['camera']['position']) + 1
@@ -109,7 +126,7 @@ class MultiViewNIA2023:
             })
 
             if key_str not in grouping:
-                grouping[key_str] = [-1, -1, -1, -1]
+                grouping[key_str] = [-1, -1, -1]
             grouping[key_str][cam_idx - 1] = data_id
             data_id += 1
 

@@ -55,7 +55,12 @@ class MultiviewMocapDataset(Dataset):
         group = copy.deepcopy(self.grouping[key_str])
         group.pop(cam_idx-1)
         # other_index = random.choice(group)
-        other_index = group[0]
+        other_indexes = [x for x in group if x != -1]
+        if len(other_indexes) < 1:
+            other_index = index
+        else:
+            other_index = other_indexes[0]
+
         other_data = copy.deepcopy(self.db[other_index])
 
         # Load other image

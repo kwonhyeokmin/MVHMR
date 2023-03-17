@@ -61,6 +61,7 @@ if __name__ == '__main__':
     else:
         AssertionError(f'{args.datasets} is not supported yet.')
     dataset_loader = MultiviewMocapDataset(dataset, True)
+    print(f'The Number of Datasets: {len(dataset_loader)}')
     data_generator = DataLoader(dataset=dataset_loader, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_thread, pin_memory=True)
 
     # Regressor for Human3.6m
@@ -107,8 +108,7 @@ if __name__ == '__main__':
         curr_batch_size = norm_img.shape[0]
 
         cx, cy, b = center[:, 0], center[:, 1], scale * 200
-        bbox_info = torch.stack([cx - img_w / 2., cy - img_h / 2., b], dim=-1)
-        # bbox_info = torch.stack([cx - princpt[:, 1], cy - princpt[:, 0], b], dim=-1)
+        bbox_info = torch.stack([cx - princpt[:, 1], cy - princpt[:, 0], b], dim=-1)
         # The constants below are used for normalization, and calculated from H36M data.
         # It should be fine if you use the plain Equation (5) in the paper.
         bbox_info[:, :2] = bbox_info[:, :2] / focal_length.unsqueeze(-1) * 2.8  # [-1, 1]
@@ -121,8 +121,7 @@ if __name__ == '__main__':
         other_focal_length = data['other_focal'].to(device).float()
 
         other_cx, other_cy, other_b = other_center[:, 0], other_center[:, 1], other_scale * 200
-        other_bbox_info = torch.stack([other_cx - other_img_w / 2., other_cy - other_img_h / 2., other_b], dim=-1)
-        # other_bbox_info = torch.stack([other_cx - other_princpt[:, 1], other_cy - other_princpt[:, 0], other_b], dim=-1)
+        other_bbox_info = torch.stack([other_cx - other_princpt[:, 1], other_cy - other_princpt[:, 0], other_b], dim=-1)
 
         other_bbox_info[:, :2] = other_bbox_info[:, :2] / other_focal_length.unsqueeze(-1) * 2.8  # [-1, 1]
         other_bbox_info[:, 2] = (other_bbox_info[:, 2] - 0.24 * other_focal_length) / (0.06 * other_focal_length)  # [-1, 1]
