@@ -78,8 +78,8 @@ There are two types that one is for running models without extra datas, second i
 ```
 @InProceedings{,  
 author = {Kwon, Hyeok-Min and Lee, Jun-Ho and Kim, Hwa-Jong},  
-title = {},  
-booktitle = {},  
+title = {Performance improvement of HMR based human pose and shape estimation model by using Multi-View Camera},
+booktitle = {The Journal of Korean Institute of Infomation Technology},  
 year = {2023}  
 }  
 ```
